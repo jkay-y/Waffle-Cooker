@@ -9,4 +9,4 @@ Do `./gradlew run`
 
 ## Documentation
 
-All documentation is recorded [here](./src/main/resources/documentation/README.md)
+All documentation is recorded [here](./documentation/README.md)

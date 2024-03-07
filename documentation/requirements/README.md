@@ -1,23 +1,15 @@
 
 # System requirements
 
-Defined system requirements for Waffle Cooker 
-
-### Select Waffle board
+Expected exceptions for requirements are mapped [here](../exceptions/README.md).
 
 | Requirement ID  | Description                               | Met ? |
 |-----------------|-------------------------------------------|-------|
-| [FR1](./FR1.md) | User chooses a game board                 | No    |
-| [FR2](./FR2.md) | User scrapes an existing Waffle by #      | No    |
-| [FR3](./FR3.md) | User inputs a custom Waffle               | No    |
-| [FR4](./FR4.md) | User is given a randomly generated Waffle | No    |
 
-### Waffle solver
 
-| Requirement ID  | Description                 | Met ? |
-|-----------------|-----------------------------|-------|
-| [FR5](./FR5.md) | System scrapes the wordlist | No    |
+Test cases provided in each
 
+### Other
 
 Functional requirements
 
