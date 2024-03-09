@@ -3,8 +3,6 @@
 
 View [system requirements](./requirements/README.md) here.
 
-Requirements are derived from the [application prototype](https://www.figma.com/proto/IFupHdMiKBGwpyWTNasSc0/Waffle-Cooker?type=design&node-id=1-3&t=SekCsurbLaWEVJ7G-1&scaling=min-zoom&page-id=0%3A1&starting-point-node-id=1%3A3),
-alongside any UML diagrams
 
 **To-do**
 

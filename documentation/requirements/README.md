@@ -1,13 +1,16 @@
 
 # System requirements
 
-Expected exceptions for requirements are mapped [here](../exceptions/README.md).
+Requirements are derived from the [application flow](../diagrams/application_flow.png). Modelled in [application prototype](https://www.figma.com/proto/IFupHdMiKBGwpyWTNasSc0/Waffle-Cooker?type=design&node-id=1-3&t=SekCsurbLaWEVJ7G-1&scaling=min-zoom&page-id=0%3A1&starting-point-node-id=1%3A3)
+
+
+Exceptions are mapped [here](../exceptions/README.md).
 
 | Requirement ID  | Description                               | Met ? |
 |-----------------|-------------------------------------------|-------|
 
 
-Test cases provided in each
+Test cases provided accordingly
 
 ### Other
 

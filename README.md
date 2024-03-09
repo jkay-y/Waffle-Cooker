@@ -3,10 +3,14 @@
 
 A solver for the word game [Waffle](https://wafflegame.net)
 
-## Run program
-
-Do `./gradlew run`
-
 ## Documentation
 
 All documentation is recorded [here](./documentation/README.md)
+
+## Dependencies
+
+C++, CMake
+
+## Run program
+
+`chmod u+x .scripts/build_and_run.sh`
