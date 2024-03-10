@@ -1,16 +1,21 @@
-
 # Waffle Cooker
 
 A solver for the word game [Waffle](https://wafflegame.net)
 
-## Documentation
+View all documentation [here](./documentation/README.md)
 
-All documentation is recorded [here](./documentation/README.md)
+## Getting started
 
-## Dependencies
+Waffle Cooker depends on these packages
 
-C++, CMake
+- git - Used for scripts
+- C++, CMake, Make - Used to compile and build program
 
-## Run program
+These instructions will assume that you are running a Unix distribution / Mac. Adapt accordingly to Windows (lol)
 
-`chmod u+x .scripts/build_and_run.sh`
+**Build and run project**
+
+```sh
+chmod u+x .scripts/build_and_run.sh
+./build/build_and_run.sh
+```

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cd $(git rev-parse --show-toplevel)
 
 if [ ! -d "build" ]; then
@@ -8,8 +10,7 @@ cd build
 
 cmake ..
 make
-./WaffleCooker
 
 cd $(git rev-parse --show-toplevel)
 
-rm -rf build/
+./build/WaffleCooker
