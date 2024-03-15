@@ -8,9 +8,6 @@ fi
 
 cd build
 
-cmake ..
-make
+zig build-exe ../src/main.zig
 
 cd $(git rev-parse --show-toplevel)
-
-./build/WaffleCooker

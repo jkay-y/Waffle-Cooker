@@ -9,13 +9,4 @@ View all documentation [here](./documentation/README.md)
 Waffle Cooker depends on these packages
 
 - git - Used for scripts
-- C++, CMake, Make - Used to compile and build program
-
-These instructions will assume that you are running a Unix distribution / Mac. Adapt accordingly to Windows (lol)
-
-**Build and run project**
-
-```sh
-chmod u+x .scripts/build_and_run.sh
-./build/build_and_run.sh
-```
+- [zig v0.11.0](https://ziglang.org/) - Install [here](https://ziglang.org/download/)
