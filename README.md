@@ -8,5 +8,6 @@ View all documentation [here](./documentation/README.md)
 
 Waffle Cooker depends on these packages
 
-- git - Used for scripts
-- [zig v0.11.0](https://ziglang.org/) - Install [here](https://ziglang.org/download/)
+- git, curl - Used for scripts and setup
+- build-essential (need gcc)
+- Rust - Install [here](https://www.rust-lang.org/tools/install)

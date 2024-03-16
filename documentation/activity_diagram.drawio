@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="Ezp0gAKIWpjDzSc0UtI0" name="application_flow">
-        <mxGraphModel dx="650" dy="669" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+        <mxGraphModel dx="650" dy="413" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -68,7 +68,7 @@
         </mxGraphModel>
     </diagram>
     <diagram id="2hXojiyVdQUbJQFL4AAp" name="startup_screen">
-        <mxGraphModel dx="1444" dy="1487" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2336" pageHeight="1654" math="0" shadow="0">
+        <mxGraphModel dx="1182" dy="751" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2336" pageHeight="1654" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -428,7 +428,7 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="dj9pQOrX2OY4o6fRsiLO-21" value="Edit Waffle" style="swimlane;whiteSpace=wrap;html=1;fillColor=#C3E88D;" parent="1" vertex="1">
-                    <mxGeometry x="240" y="1080" width="710" height="360" as="geometry"/>
+                    <mxGeometry x="240" y="1030" width="710" height="360" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
