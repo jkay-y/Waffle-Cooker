@@ -9,5 +9,6 @@ edition = "2021"
 thirtyfour = "0.31.0"
 tokio = { version = "1.36.0", features = ["full"] }
 scraper = "0.19.0"
+regex = "1.10.3"
 gl="0.14.0"
 glfw="0.55.0"
