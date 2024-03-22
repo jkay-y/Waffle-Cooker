@@ -6,43 +6,66 @@ use tokio::time::Duration;
 
 #[tokio::main]
 async fn main() {
+    println!("[DEBUG] Starting Waffle Cooker");
 
-    println!("[DEBUG] Inside main()");
+    let mut firefox_capabilities = DesiredCapabilities::firefox();
+    match firefox_capabilities.set_headless() {
+        Ok(_) => println!("[DEBUG] main() - FirefoxCapabilities.set_headless()"),
+        Err(_) => {
+            panic!("[ERROR] main() - FirefoxCapabilities.set_headless() failed");
+        },
+    }
 
-    match select_a_waffle(None).await {
+    let web_driver: WebDriver = match WebDriver::new("http://localhost:4444", firefox_capabilities).await {
+        Ok(web_driver) => {
+            println!("[DEBUG] main() - Initialised WebDriver::new()");
+            web_driver
+        },
+        Err(_) => {
+            panic!("[ERROR] main() - Error when initialising Webdriver. Did you run geckodriver?");
+        },
+    };
+
+    match scrape_wordlist(&web_driver).await {
         _ => (),
     };
 
+    println!("Choose Waffle # to scrape:");
+
+    let mut input_waffle = String::new();
+    std::io::stdin().read_line(&mut input_waffle).expect("Failed to read line");
+
+    input_waffle = input_waffle.trim().to_string();
+
+    let mut selected_num: Option<u32> = Some(0);
+    input_waffle.chars()
+        .collect::<Vec<char>>().iter()
+        .for_each(|c| {
+            if !c.is_numeric() {
+                selected_num = None;
+            }
+        });
+
+
+    match selected_num {
+        Some(_) => {
+            selected_num = Some(input_waffle.parse().unwrap());
+        },
+        None => (),
+    };
+
+    match select_a_waffle(selected_num, web_driver).await {
+        _ => (),
+    };
 }
 
 enum WCExceptionCodes {
     WCTEMP(String),
 }
 
-async fn select_a_waffle(waffle_num: Option<u32>) -> Result<WaffleBoard, WCExceptionCodes> {
-
+async fn select_a_waffle(waffle_num: Option<u32>, web_driver: WebDriver) -> Result<WaffleBoard, WCExceptionCodes> {
     println!("[DEBUG] Inside select_a_waffle()");
     
-    let mut firefox_capabilities = DesiredCapabilities::firefox();
-    match firefox_capabilities.set_headless() {
-        Ok(_) => println!("[DEBUG] select_a_waffle() - FirefoxCapabilities.set_headless()"),
-        Err(_) => {
-            println!("[ERROR] select_a_waffle() - FirefoxCapabilities.set_headless() failed");
-            return Err(WCExceptionCodes::WCTEMP("Error when doing set_headless()".to_string()));
-        },
-    }
-
-    let web_driver: WebDriver = match WebDriver::new("http://localhost:4444", firefox_capabilities).await {
-        Ok(web_driver) => {
-            println!("[DEBUG] select_a_waffle() - Initialised WebDriver::new()");
-            web_driver
-        },
-        Err(_) => {
-            println!("[ERROR] select_a_waffle() - WebDriver::new()");
-            return Err(WCExceptionCodes::WCTEMP("Error when initialising WebDriver".to_string()));
-        },
-    };
-
     let url: String;
     match waffle_num {
         Some(num) => {
@@ -111,7 +134,6 @@ async fn select_a_waffle(waffle_num: Option<u32>) -> Result<WaffleBoard, WCExcep
     };
     
     return waffle_html_to_board(page_html);
-
 }
 
 async fn quit_driver(driver: WebDriver) {
@@ -155,7 +177,6 @@ struct WaffleTile {
 }
 
 impl WaffleTile {
-
     fn set_color(&mut self, choice: WaffleTileColor) {
         match choice {
             WaffleTileColor::Green => {
@@ -184,7 +205,6 @@ impl WaffleTile {
             self.letter = letter_choice;
         }
     }
-
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -215,14 +235,22 @@ fn new_board() -> WaffleBoard {
 }
 
 fn waffle_html_to_board(waffle_html: String) -> Result<WaffleBoard, WCExceptionCodes> {
-
     println!("[DEBUG] Inside waffle_html_to_board()");
 
     let page_doc = Html::parse_document(&waffle_html);
 
     let mut board = new_board();
 
-    let daily_num_selector = Selector::parse("div.game-number").unwrap();
+    let daily_num_selector = match Selector::parse("div.game-number") {
+        Ok(selector) => {
+            println!("[DEBUG] Selector::parse() initialised successfully");
+            selector
+        },
+        Err(_) => {
+            println!("[ERROR] Selector::parse() failed");
+            return Err(WCExceptionCodes::WCTEMP("Selector::parse() failed".to_string()));
+        },
+    };
     for element in page_doc.select(&daily_num_selector) {
         if !element.inner_html().is_empty() {
             let html_text = element.inner_html();
@@ -269,7 +297,6 @@ fn waffle_html_to_board(waffle_html: String) -> Result<WaffleBoard, WCExceptionC
                 if !outer_html.is_empty() {
                     let class_re = match Regex::new(r#"class="tile draggable tile--[a-z]( green| yellow)?"#) {
                         Ok(re_entity) => {
-                            println!("[DEBUG] waffle_html_to_board() - Regex::new() initialised for class=\"tile draggable tile\"");
                             re_entity
                         },
                         Err(_) => {
@@ -322,5 +349,83 @@ fn waffle_html_to_board(waffle_html: String) -> Result<WaffleBoard, WCExceptionC
     board.print_board();
 
     return Ok(board);
-
 }
+
+// TODO - Scrape wordlist
+async fn scrape_wordlist(web_driver: &WebDriver) -> Result <Vec<String>, WCExceptionCodes> {
+    println!("[DEBUG] Inside scrape_wordlist()");
+
+    if check_wordlist() {
+        // If wordlist is scraped already, don't scrape again
+        println!("[DEBUG] scrape_wordlist() - Wordlist has been scraped previously, returning");
+        return Ok(vec![]);
+    }
+
+    // Move firefox_capabilities out of select_a_waffle and put in main
+    let mut wordlist_urls = vec!["https://www.thewordfinder.com/wordlist/5-letter-words/".to_string()];
+    for i in 2..51 {
+        wordlist_urls.push(format!("https://www.thewordfinder.com/wordlist/5-letter-words/?dir=ascending&field=word&pg={}&size=5", i));
+    }
+
+    //scrape all in wordlist_urls
+
+    let mut words: Vec<String> = vec![];
+    for (idx, url) in wordlist_urls.iter().enumerate() {
+        println!("[DEBUG] scrape_wordlist() - Parsing page #{}", idx + 1);
+
+        match web_driver.goto(&url).await {
+            Ok(_) => {
+                println!("[DEBUG] scrape_wordlist() - Connected to {}", url);
+                match web_driver.source().await {
+                    Ok(text) => {
+                        parse_wordlist_site(text).iter().for_each(|word| {
+                            words.push(word.to_string());
+                        });
+                    },
+                    Err(_) => {
+                        println!("[ERROR] Error when getting source from {}", url);
+                        return Err(WCExceptionCodes::WCTEMP("Error when getting source from {url}".to_string()));
+                    },
+                };
+            },
+            Err(_) => {
+                println!("[ERROR] scrape_wordlist() - Error when going to {}", url);
+                return Err(WCExceptionCodes::WCTEMP("Error when going to {url}".to_string()));
+            },
+        };
+    }
+    println!("[DEBUG] scrape_wordlist() - Size of wordlist is {}", words.len());
+
+    // TODO - Add all of these to a file, and then fix check_wordlist()
+
+    return Ok(words);
+}
+
+fn check_wordlist() -> bool {
+    // What are we checking for?
+    return false;
+}
+
+fn parse_wordlist_site(wordlist_html: String) -> Vec<String> {
+    println!("[DEBUG] Inside parse_wordlist_site");
+    let mut result: Vec<String> = vec![];
+    let page_doc = Html::parse_document(&wordlist_html);
+    let ul_list_selector = Selector::parse("ul.clearfix").unwrap();
+    let li_selector = Selector::parse("li").unwrap();
+    let a_selector = Selector::parse("a").unwrap();
+    let span_selector = Selector::parse("span[style='letter-spacing: 1px;']").unwrap();
+    for ul_elem in page_doc.select(&ul_list_selector) {
+        for li_elem in ul_elem.select(&li_selector) {
+            for a_elem in li_elem.select(&a_selector) {
+                for span_elem in a_elem.select(&span_selector) {
+                    result.push(span_elem.inner_html());
+                }
+            }
+        }
+    }
+    println!("[DEBUG] parse_wordlist_site() - Size of result is {}", result.len());
+    return result;
+}
+
+// TODO - Create possibilities data structure that can dynamically update
+
