@@ -1,6 +1,10 @@
-
 use regex::Regex;
 use scraper::{Html, Selector};
+use std::fs::File;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::io::Write;
+use std::path::Path;
 use thirtyfour::prelude::*;
 use tokio::time::Duration;
 
@@ -161,7 +165,7 @@ impl WaffleBoard {
                     WaffleTileColor::Green => print!("G"),
                     WaffleTileColor::Orange => print!("O"),
                     WaffleTileColor::White => print!("W"),
-                    WaffleTileColor::None => print!("N"),
+                    WaffleTileColor::Gray => print!("N"),
                 }
                 print!("{},", self.tiles[y][x].letter);
             }
@@ -212,14 +216,14 @@ enum WaffleTileColor {
     Green,
     Orange,
     White,
-    None
+    Gray,
 }
 
 fn new_board() -> WaffleBoard {
     println!("[DEBUG] Entering new_board()");
     let temp_tile :WaffleTile = WaffleTile {
         letter: 'a',
-        color: WaffleTileColor::None,
+        color: WaffleTileColor::Gray,
     };
     let board: WaffleBoard = WaffleBoard {
         number: 0,
@@ -351,15 +355,15 @@ fn waffle_html_to_board(waffle_html: String) -> Result<WaffleBoard, WCExceptionC
     return Ok(board);
 }
 
-// TODO - Scrape wordlist
-async fn scrape_wordlist(web_driver: &WebDriver) -> Result <Vec<String>, WCExceptionCodes> {
+async fn scrape_wordlist(web_driver: &WebDriver) -> Result<Vec<String>, WCExceptionCodes> {
     println!("[DEBUG] Inside scrape_wordlist()");
 
-    if check_wordlist() {
-        // If wordlist is scraped already, don't scrape again
-        println!("[DEBUG] scrape_wordlist() - Wordlist has been scraped previously, returning");
-        return Ok(vec![]);
-    }
+    match check_for_wordlist() {
+        Some(vec_wordlist) => {
+            return Ok(vec_wordlist);
+        },
+        None => (),
+    };
 
     // Move firefox_capabilities out of select_a_waffle and put in main
     let mut wordlist_urls = vec!["https://www.thewordfinder.com/wordlist/5-letter-words/".to_string()];
@@ -396,14 +400,52 @@ async fn scrape_wordlist(web_driver: &WebDriver) -> Result <Vec<String>, WCExcep
     }
     println!("[DEBUG] scrape_wordlist() - Size of wordlist is {}", words.len());
 
-    // TODO - Add all of these to a file, and then fix check_wordlist()
+    let mut file = match File::create(Path::new("./resources/wordlist.txt")) {
+        Ok(file_content) => {
+            println!("[DEBUG] scrape_wordlist() - Created wordlist.txt");
+            file_content
+        },
+        Err(_) => {
+            println!("[ERROR] Failed to create wordlist.txt");
+            return Err(WCExceptionCodes::WCTEMP("Failed to create wordlist.txt".to_string()));
+        },
+    };
+    words.iter().for_each(|word| {
+        let write_string = word.to_owned() + "\n";
+        match file.write(write_string.as_bytes()) {
+            Ok(_) => (),
+            Err(_) => {
+                println!("[ERROR] Failed to write word {} to wordlist.txt", word);
+            },
+        };
+    });
+
+    println!("[DEBUG] Wrote all words to wordlist.txt");
 
     return Ok(words);
 }
 
-fn check_wordlist() -> bool {
-    // What are we checking for?
-    return false;
+fn check_for_wordlist() -> Option<Vec<String>> {
+    match File::open(Path::new("./resources/wordlist.txt")) {
+        Ok(wordlist_file) => {
+            println!("[DEBUG] check_for_wordlist() - wordlist.txt already exists, skipping wordlist scrape");
+            let mut words_vec = vec![];
+            let reader = BufReader::new(wordlist_file);
+            for line in reader.lines() {
+                match line {
+                    Ok(word_string) => {
+                        words_vec.push(word_string);
+                    },
+                    Err(_) => println!("[ERROR] check_for_wordlist() - Failed to read line"),
+                }
+            }
+            return Some(words_vec);
+        },
+        Err(_) => {
+            println!("[DEBUG] check_for_wordlist() - wordlist.txt doesn't exist, scraping wordlist");
+            return None;
+        },
+    }
 }
 
 fn parse_wordlist_site(wordlist_html: String) -> Vec<String> {
