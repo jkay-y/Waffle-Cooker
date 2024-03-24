@@ -30,8 +30,25 @@ async fn main() {
         },
     };
 
+    let full_wordlist: Vec<String>;
     match scrape_wordlist(&web_driver).await {
-        _ => (),
+        Ok(scraped_wordlist) => {
+            full_wordlist = scraped_wordlist;
+        },
+        Err(errcode) => {
+            match errcode {
+                WCExceptionCodes::WCTEMP(err_string) => panic!("[ERROR] {}", err_string),
+            };
+        },
+    };
+
+    let mut full_possibilities = WafflePossibilities {
+        vert_one: full_wordlist.clone(),
+        vert_two: full_wordlist.clone(),
+        vert_three: full_wordlist.clone(),
+        hor_one: full_wordlist.clone(),
+        hor_two: full_wordlist.clone(),
+        hor_three: full_wordlist.clone(),
     };
 
     println!("Choose Waffle # to scrape:");
@@ -58,9 +75,94 @@ async fn main() {
         None => (),
     };
 
+    let game_board: WaffleBoard;
     match select_a_waffle(selected_num, web_driver).await {
-        _ => (),
+        Ok(waffle_board) => {
+            game_board = waffle_board;
+        },
+        Err(errcode) => {
+            match errcode {
+                WCExceptionCodes::WCTEMP(err_string) => panic!("[ERROR] {}", err_string),
+            }
+        },
     };
+
+    // TODO - Get rid of impossible
+
+    let mut possible_chars = vec![];
+    game_board.tiles.iter().for_each(|row| {
+        row.iter().for_each(|tile| {
+            if !possible_chars.contains(&tile.letter) {
+                possible_chars.push(tile.letter);
+            }
+        });
+    });
+
+    full_possibilities.vert_one.retain(|word| {
+        let mut return_val = true;
+        word.chars().for_each(|c| {
+            if !possible_chars.contains(&c) {
+                return_val = false;
+            }
+        });
+        return_val
+    });
+
+
+    full_possibilities.vert_two.retain(|word| {
+        let mut return_val = true;
+        word.chars().for_each(|c| {
+            if !possible_chars.contains(&c) {
+                return_val = false;
+            }
+        });
+        return_val
+    });
+
+    full_possibilities.vert_three.retain(|word| {
+        let mut return_val = true;
+        word.chars().for_each(|c| {
+            if !possible_chars.contains(&c) {
+                return_val = false;
+            }
+        });
+        return_val
+    });
+
+
+    full_possibilities.hor_one.retain(|word| {
+        let mut return_val = true;
+        word.chars().for_each(|c| {
+            if !possible_chars.contains(&c) {
+                return_val = false;
+            }
+        });
+        return_val
+    });
+
+
+    full_possibilities.hor_two.retain(|word| {
+        let mut return_val = true;
+        word.chars().for_each(|c| {
+            if !possible_chars.contains(&c) {
+                return_val = false;
+            }
+        });
+        return_val
+    });
+
+    full_possibilities.hor_three.retain(|word| {
+        let mut return_val = true;
+        word.chars().for_each(|c| {
+            if !possible_chars.contains(&c) {
+                return_val = false;
+            }
+        });
+        return_val
+    });
+
+
+    update_possibilities(game_board, full_possibilities);
 }
 
 enum WCExceptionCodes {
@@ -311,7 +413,6 @@ fn waffle_html_to_board(waffle_html: String) -> Result<WaffleBoard, WCExceptionC
                     if class_re.is_match(&outer_html) {
                         let class_captures = match class_re.captures(&outer_html) {
                             Some(captures) => {
-                                println!("[DEBUG] waffle_html_to_board() - Matches found for class=\"tile draggable tile\"");
                                 captures
                             },
                             None => {
@@ -323,7 +424,6 @@ fn waffle_html_to_board(waffle_html: String) -> Result<WaffleBoard, WCExceptionC
                         class_name_attribute = class_name_attribute[28..].to_string();
                         match class_name_attribute.chars().nth(0) {
                             Some(result_char) => {
-                                println!("[DEBUG] waffle_html_to_board() - Tile at ({}, {}) has letter {}", x, y, result_char);
                                 board.tiles[y][x].set_letter(result_char.to_ascii_uppercase());
                             },
                             None => {
@@ -469,5 +569,280 @@ fn parse_wordlist_site(wordlist_html: String) -> Vec<String> {
     return result;
 }
 
-// TODO - Create possibilities data structure that can dynamically update
+// TODO - Given WaffleBoard and current possibilities, get new possibilities
+
+struct WafflePossibilities {
+    vert_one: Vec<String>,
+    vert_two: Vec<String>,
+    vert_three: Vec<String>,
+    hor_one: Vec<String>,
+    hor_two: Vec<String>,
+    hor_three: Vec<String>,
+}
+
+fn update_possibilities(waffle_board: WaffleBoard, current_possibilities: WafflePossibilities) -> WafflePossibilities {
+    let mut updated_possibilities = WafflePossibilities {
+        vert_one: current_possibilities.vert_one.clone(),
+        vert_two: current_possibilities.vert_two.clone(),
+        vert_three: current_possibilities.vert_three.clone(),
+        hor_one: current_possibilities.hor_one.clone(),
+        hor_two: current_possibilities.hor_two.clone(),
+        hor_three: current_possibilities.hor_three.clone(),
+    };
+
+    for (row_idx, row) in waffle_board.tiles.iter().enumerate() {
+        for (col_idx, tile) in row.iter().enumerate() {
+            match row_idx {
+                0 => {
+                    match col_idx {
+                        0 => {
+                            match tile.color {
+                                WaffleTileColor::Green => {
+                                    updated_possibilities.vert_one.retain(|word| word.chars().nth(0) == Some(tile.letter));
+                                    updated_possibilities.hor_one.retain(|word| word.chars().nth(0) == Some(tile.letter));
+                                },
+                                WaffleTileColor::White => {
+                                    updated_possibilities.vert_one.retain(|word| word.chars().nth(0) != Some(tile.letter));
+                                    updated_possibilities.hor_one.retain(|word| word.chars().nth(0) != Some(tile.letter));
+                                },
+                                _ => (),
+                            };
+                        },
+                        1 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.hor_one.retain(|word| word.chars().nth(1) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.hor_one.retain(|word| word.contains(tile.letter) && word.chars().nth(1) != Some(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.hor_one.retain(|word| word.chars().nth(1) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        2 => {
+                            match tile.color {
+                                WaffleTileColor::Green => {
+                                    updated_possibilities.vert_two.retain(|word| word.chars().nth(0) == Some(tile.letter));
+                                    updated_possibilities.hor_one.retain(|word| word.chars().nth(2) == Some(tile.letter));
+                                },
+                                WaffleTileColor::Orange | WaffleTileColor::White => {
+                                    updated_possibilities.vert_two.retain(|word| word.chars().nth(0) != Some(tile.letter));
+                                    updated_possibilities.hor_one.retain(|word| word.chars().nth(2) != Some(tile.letter));
+                                },
+                                _ => (),
+                            };
+                        },
+                        3 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.hor_one.retain(|word| word.chars().nth(3) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.hor_one.retain(|word| word.contains(tile.letter) && word.chars().nth(3) != Some(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.hor_one.retain(|word| word.chars().nth(3) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        4 => {
+                            match tile.color {
+                                WaffleTileColor::Green => {
+                                    updated_possibilities.vert_three.retain(|word| word.chars().nth(0) == Some(tile.letter));
+                                    updated_possibilities.hor_one.retain(|word| word.chars().nth(4) == Some(tile.letter));
+                                },
+                                WaffleTileColor::White => {
+                                    updated_possibilities.vert_three.retain(|word| word.chars().nth(0) != Some(tile.letter));
+                                    updated_possibilities.hor_one.retain(|word| word.chars().nth(4) != Some(tile.letter));
+                                },
+                                _ => (),
+                            };
+                        },
+                        _ => {},
+                    };
+                },
+                1 => {
+                    match col_idx {
+                        0 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.vert_one.retain(|word| word.chars().nth(1) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.vert_one.retain(|word| word.contains(tile.letter) && word.chars().nth(1) != Some(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.vert_one.retain(|word| word.chars().nth(1) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        2 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.vert_two.retain(|word| word.chars().nth(1) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.vert_two.retain(|word| word.contains(tile.letter) && word.chars().nth(1) != Some(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.vert_two.retain(|word| word.chars().nth(1) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        4 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.vert_three.retain(|word| word.chars().nth(1) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.vert_three.retain(|word| word.contains(tile.letter) && word.chars().nth(1) != Some(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.vert_three.retain(|word| word.chars().nth(1) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        _ => (),
+                    };
+                },
+                2 => {
+                    match col_idx {
+                        0 => {
+                            match tile.color {
+                                WaffleTileColor::Green => {
+                                    updated_possibilities.vert_one.retain(|word| word.chars().nth(2) == Some(tile.letter));
+                                    updated_possibilities.hor_two.retain(|word| word.chars().nth(0) == Some(tile.letter));
+                                },
+                                WaffleTileColor::Orange | WaffleTileColor::White => {
+                                    updated_possibilities.vert_one.retain(|word| word.chars().nth(2) != Some(tile.letter));
+                                    updated_possibilities.hor_two.retain(|word| word.chars().nth(0) != Some(tile.letter));
+                                },
+                                _ => (),
+                            };
+                        },
+                        1 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.hor_two.retain(|word| word.chars().nth(1) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.hor_two.retain(|word| word.chars().nth(1) != Some(tile.letter) && word.contains(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.hor_two.retain(|word| word.chars().nth(1) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        2 => {
+                            match tile.color {
+                                WaffleTileColor::Green => {
+                                    updated_possibilities.vert_two.retain(|word| word.chars().nth(2) == Some(tile.letter));
+                                    updated_possibilities.hor_two.retain(|word| word.chars().nth(2) == Some(tile.letter));
+                                },
+                                WaffleTileColor::Orange | WaffleTileColor::White => {
+                                    updated_possibilities.vert_two.retain(|word| word.chars().nth(2) != Some(tile.letter));
+                                    updated_possibilities.hor_two.retain(|word| word.chars().nth(2) != Some(tile.letter));
+                                },
+                                _ => (),
+                            };
+                        },
+                        3 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.hor_two.retain(|word| word.chars().nth(3) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.hor_two.retain(|word| word.chars().nth(3) != Some(tile.letter) && word.contains(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.hor_two.retain(|word| word.chars().nth(3) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        4 => {
+                            match tile.color {
+                                WaffleTileColor::Green => {
+                                    updated_possibilities.vert_three.retain(|word| word.chars().nth(2) == Some(tile.letter));
+                                    updated_possibilities.hor_two.retain(|word| word.chars().nth(4) == Some(tile.letter));
+                                },
+                                WaffleTileColor::Orange | WaffleTileColor::White => {
+                                    updated_possibilities.vert_three.retain(|word| word.chars().nth(2) != Some(tile.letter));
+                                    updated_possibilities.hor_two.retain(|word| word.chars().nth(4) != Some(tile.letter));
+                                },
+                                _ => (),
+                            };
+                        },
+                        _ => (),
+                    };
+                },
+                3 => {
+                    match col_idx {
+                        0 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.vert_one.retain(|word| word.chars().nth(3) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.vert_one.retain(|word| word.contains(tile.letter) && word.chars().nth(3) != Some(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.vert_one.retain(|word| word.chars().nth(3) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        2 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.vert_two.retain(|word| word.chars().nth(3) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.vert_two.retain(|word| word.contains(tile.letter) && word.chars().nth(3) != Some(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.vert_two.retain(|word| word.chars().nth(3) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        4 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.vert_three.retain(|word| word.chars().nth(3) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.vert_three.retain(|word| word.contains(tile.letter) && word.chars().nth(3) != Some(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.vert_three.retain(|word| word.chars().nth(3) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        _ => (),
+                    };
+                },
+                4 => {
+                    match col_idx {
+                        0 => {
+                            match tile.color {
+                                WaffleTileColor::Green => {
+                                    updated_possibilities.vert_one.retain(|word| word.chars().nth(4) == Some(tile.letter));
+                                    updated_possibilities.hor_three.retain(|word| word.chars().nth(0) == Some(tile.letter));
+                                },
+                                WaffleTileColor::Orange | WaffleTileColor::White => {
+                                    updated_possibilities.vert_one.retain(|word| word.chars().nth(4) != Some(tile.letter));
+                                    updated_possibilities.hor_three.retain(|word| word.chars().nth(0) != Some(tile.letter));
+                                },
+                                _ => (),
+                            };
+                        },
+                        1 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.hor_three.retain(|word| word.chars().nth(1) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.hor_three.retain(|word| word.chars().nth(1) != Some(tile.letter) && word.contains(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.hor_three.retain(|word| word.chars().nth(1) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        2 => {
+                            match tile.color {
+                                WaffleTileColor::Green => {
+                                    updated_possibilities.vert_two.retain(|word| word.chars().nth(4) == Some(tile.letter));
+                                    updated_possibilities.hor_three.retain(|word| word.chars().nth(2) == Some(tile.letter));
+                                },
+                                WaffleTileColor::Orange | WaffleTileColor::White => {
+                                    updated_possibilities.vert_two.retain(|word| word.chars().nth(4) != Some(tile.letter));
+                                    updated_possibilities.hor_three.retain(|word| word.chars().nth(2) != Some(tile.letter));
+                                },
+                                _ => (),
+                            };
+                        },
+                        3 => {
+                            match tile.color {
+                                WaffleTileColor::Green => updated_possibilities.hor_three.retain(|word| word.chars().nth(3) == Some(tile.letter)),
+                                WaffleTileColor::Orange => updated_possibilities.hor_three.retain(|word| word.chars().nth(3) != Some(tile.letter) && word.contains(tile.letter)),
+                                WaffleTileColor::White => updated_possibilities.hor_three.retain(|word| word.chars().nth(3) != Some(tile.letter)),
+                                _ => (),
+                            };
+                        },
+                        4 => {
+                            match tile.color {
+                                WaffleTileColor::Green => {
+                                    updated_possibilities.vert_three.retain(|word| word.chars().nth(4) == Some(tile.letter));
+                                    updated_possibilities.hor_three.retain(|word| word.chars().nth(4) == Some(tile.letter));
+                                },
+                                WaffleTileColor::Orange | WaffleTileColor::White => {
+                                    updated_possibilities.vert_three.retain(|word| word.chars().nth(4) != Some(tile.letter));
+                                    updated_possibilities.hor_three.retain(|word| word.chars().nth(4) != Some(tile.letter));
+                                },
+                                _ => (),
+                            };
+                        },
+                        _ => (),
+                    };
+                },
+                _ => {},
+            };
+        }
+    }
+
+    println!("[DEBUG] update_possibilities() - vert_one is {:?}", updated_possibilities.vert_one);
+    println!("[DEBUG] update_possibilities() - vert_two is {:?}", updated_possibilities.vert_two);
+    println!("[DEBUG] update_possibilities() - vert_three is {:?}", updated_possibilities.vert_three);
+    println!("[DEBUG] update_possibilities() - hor_one is {:?}", updated_possibilities.hor_one);
+    println!("[DEBUG] update_possibilities() - hor_two is {:?}", updated_possibilities.hor_two);
+    println!("[DEBUG] update_possibilities() - hor_three is {:?}", updated_possibilities.hor_three);   
+
+    return updated_possibilities;
+}
 
